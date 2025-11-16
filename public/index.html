@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+    </style>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calendar-alt"></i> SmartFest</h1>
+            <p class="app-description">
+                Выберите сценарий использования, отметьте интересующие события и сгенерируйте оптимальные маршруты для посещения фестиваля.
+            </p>
+        </header>
+        
+        <div class="scenario-selector">
+            <button class="scenario-btn active" onclick="setScenario('individual')">
+                <i class="fas fa-user"></i> Индивидуальное планирование
+            </button>
+            <button class="scenario-btn" onclick="setScenario('group')">
+                <i class="fas fa-users"></i> Групповое планирование
+            </button>
+            <button class="scenario-btn" onclick="setScenario('on-site')">
+                <i class="fas fa-map-marker-alt"></i> Корректировка на месте
+            </button>
+        </div>
+        
+        <div class="main-content">
+            <div class="card">
+                <h2><i class="fas fa-list-alt"></i> События фестиваля</h2>
+                
+                <div id="individualScenario" class="scenario-content">
+                    <div class="comparison-info">
+                        <p>Выбрано событий: <span id="selectedCount">0</span> из <span id="totalCount">10</span></p>
+                        <p>Статистика: <span id="selectionStats"></span></p>
+                    </div>
+                </div>
+                
+                <div id="groupScenario" class="scenario-content" style="display: none;">
+                    <div class="group-members">
+                        <h3><i class="fas fa-users"></i> Участники группы</h3>
+                        <div id="groupMembersList">
+                            <div class="group-member">
+                                <input type="text" placeholder="Имя участника" value="Участник 1" onchange="updateMemberName(this, 0)">
+                                <span class="member-color" style="background: #4361ee;"></span>
+                                <button onclick="removeMember(this)" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <button onclick="addGroupMember()" class="btn btn-success"><i class="fas fa-plus"></i> Добавить участника</button>
+                    </div>
+                    
+                    <div id="memberSelections" class="members-selections">
+                        <!-- Динамически генерируемые блоки выбора для каждого участника -->
+                    </div>
+                    
+                    <div class="comparison-info">
+                        <p>Общие события: <span id="commonEventsCount">0</span></p>
+                        <p>Статистика группы: <span id="groupSelectionStats"></span></p>
+                    </div>
+                </div>
+                
+                <div id="onSiteScenario" class="scenario-content" style="display: none;">
+                    <div class="current-schedule">
+                        <h3><i class="fas fa-clock"></i> Текущее расписание</h3>
+                        <div id="currentScheduleDisplay" class="empty-state">
+                            <i class="fas fa-calendar-plus"></i>
+                            <p>У вас пока нет активного расписания</p>
+                        </div>
+                    </div>
+                    <div class="add-event-panel">
+                        <h3><i class="fas fa-plus-circle"></i> Добавить событие</h3>
+                        <div class="add-event-form">
+                            <input type="text" id="newEventName" placeholder="Название события">
+                            <input type="time" id="newEventStartTime">
+                            <input type="number" id="newEventDuration" placeholder="Длительность (мин)" min="15" max="180" value="60">
+                            <select id="newEventLocation">
+                                <option value="Главная сцена">Главная сцена</option>
+                                <option value="Малая сцена">Малая сцена</option>
+                                <option value="Павильон А">Павильон А</option>
+                                <option value="Павильон Б">Павильон Б</option>
+                                <option value="Конференц-зал">Конференц-зал</option>
+                                <option value="Фуд-корт">Фуд-корт</option>
+                            </select>
+                            <button onclick="addCustomEvent()" class="btn btn-success"><i class="fas fa-plus"></i> Добавить событие</button>
+                        </div>
+                    </div>
+                    <div class="comparison-info">
+                        <p>Выбрано событий: <span id="onSiteSelectedCount">0</span> из <span id="onSiteTotalCount">10</span></p>
+                        <p>Статистика: <span id="onSiteSelectionStats"></span></p>
+                    </div>
+                </div>
+                
+                <div class="events-container" id="eventsList"></div>
+                
+                <div class="buttons-container">
+                    <button onclick="generateSchedules()" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Сгенерировать расписания
+                    </button>
+                    <button onclick="saveSelection()" class="btn btn-success">
+                        <i class="fas fa-save"></i> Сохранить выбор
+                    </button>
+                    <button onclick="clearSelection()" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Очистить выбор
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-calendar-check"></i> Рекомендуемые расписания</h2>
+                
+                <div class="schedule-actions">
+                    <button onclick="saveCurrentSchedules()" class="btn btn-success">
+                        <i class="fas fa-save"></i> Сохранить расписания
+                    </button>
+                    <button onclick="loadSavedSchedules()" class="btn btn-info">
+                        <i class="fas fa-folder-open"></i> Мои сохраненные
+                    </button>
+                    <button onclick="downloadSelectedSchedule()" class="btn btn-warning" id="downloadBtn" style="display: none;">
+                        <i class="fas fa-download"></i> Скачать выбранное
+                    </button>
+                    <button onclick="resetSelection()" class="btn btn-danger" id="resetBtn" style="display: none;">
+                        <i class="fas fa-redo"></i> Выбрать заново
+                    </button>
+                </div>
+                
+                <div id="schedulesList">
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-alt"></i>
+                        <p>Сгенерируйте расписания, чтобы увидеть варианты</p>
+                    </div>
+                </div>
+                
+                <div id="savedSchedulesSection" class="saved-schedules-section" style="display: none;">
+                    <h2><i class="fas fa-bookmark"></i> Мои сохраненные расписания</h2>
+                    <div id="savedSchedulesList" class="saved-schedules-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/scripts.js"></script>
+</body>
+</html>
